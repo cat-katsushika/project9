@@ -69,7 +69,8 @@ class VoiceChatRoomEntryExitAPIView(APIView):
                 session.duration = session.exit_time - session.entry_time
                 session.save()
 
-                return Response({"message": "滞在時間が記録されました。", "duration": session.duration}, status=200)
+                second = int(session.duration.total_seconds())
+                return Response({"message": "滞在時間が記録されました。", "duration": second}, status=200)
 
             except VoiceChatSession.DoesNotExist:
                 # 入室記録がない場合のエラーメッセージ
