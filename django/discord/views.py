@@ -141,9 +141,12 @@ class CreateVoiceChatDailyStatAPIView(APIView):
                 total_duration = yesterday_stat.total_duration
                 difference = yesterday_stat.difference_from_previous_day
 
+            if not difference:
+                difference = timedelta(0)
+
             response_data[discord_user.discord_username] = {
-                "total_duration": total_duration,
-                "difference_from_previous_day": difference,
+                "total_duration": int(total_duration.total_seconds()),
+                "difference_from_previous_day": (difference.total_seconds()),
             }
 
         sorted_response_data = dict(
@@ -152,12 +155,24 @@ class CreateVoiceChatDailyStatAPIView(APIView):
 
         text = ""
         for index, (key, value) in enumerate(sorted_response_data.items()):
-            text += f"{index+1}.  VC総滞在時間 -> {value['total_duration']} : {key}\n"
+            duration_seconds = int(value["total_duration"])
+            hours, remainder = divmod(duration_seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            text += f"{index+1}.  VC総滞在時間 -> {hours}時間{minutes}分{seconds}秒 : {key}"
+
+            diff_from_previous_day_seconds = int(value["difference_from_previous_day"])
+            if diff_from_previous_day_seconds > 0:
+                diff_hours, diff_remainder = divmod(diff_from_previous_day_seconds, 3600)
+                diff_minutes, diff_seconds = divmod(diff_remainder, 60)
+                text += f"前日比: +{diff_hours}時間{diff_minutes}分{diff_seconds}秒" 
+
+            text += "\n"
 
         # 更新があるときだけ通知
         flag = False
         for key, value in sorted_response_data.items():
-            if value["difference_from_previous_day"] > timedelta(0):
+            if int(value["difference_from_previous_day"]) > 0:
                 flag = True
                 break
 
