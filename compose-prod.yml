@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${DB_NAME} -U $${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - project9-webnet
+  
+  django:
+    build:
+      context: ./django
+      dockerfile: Dockerfile.prod
+    env_file:
+      - .env
+    ports:
+      - 8002:8000
+    # volumes: 
+    #   - ./django:/django これをすると，現在動いているやつで使用していないモジュールを使ったものとかをgit pullすると，現在動いてるのがblueもgreenも落ちる
+    volumes:
+      - ./django/static:/django/static # nginxと連携するために，staticはマウントする
+      - ./django/media:/django/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - project9-webnet
+
+  discord-bot:
+    build:
+      context: ./discord-bot
+      dockerfile: Dockerfile
+    volumes:
+      - ./discord-bot:/discord-bot
+    env_file:
+      - .env
+    networks:
+      - project9-webnet
+
+networks:
+  project9-webnet:
+    driver: bridge

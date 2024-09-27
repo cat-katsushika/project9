@@ -1,0 +1,9 @@
+[tool.black]
+line-length = 120
+extend-exclude = "(migrations|manage.py|asgi.py|wsgi.py)"
+
+[tool.isort]
+line_length = 120
+profile = "black"
+extend_skip_glob = ["**/migrations/*","manage.py","asgi.py","wsgi.py"]
+src_paths = ["."]

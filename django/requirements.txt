@@ -1,0 +1,11 @@
+Django==4.2.16               # LTS サポート長いやつ
+django-environ==0.11.2       # 環境変数を簡単に扱うためのライブラリ
+djangorestframework==3.15.2
+psycopg2==2.9.9
+gunicorn==23.0.0
+requests==2.32.3
+
+# dev
+black==24.8.0
+flake8==7.1.1
+isort===5.13.2
