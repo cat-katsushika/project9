@@ -20,7 +20,7 @@ class VoiceChatRoomEntryExitAPIView(APIView):
 
         if discord_user_id is None or discord_username is None or state is None:
             return Response({"message": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         if state != "entry" and state != "exit":
             return Response({"message": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -154,18 +154,21 @@ class CreateVoiceChatDailyStatAPIView(APIView):
         )
 
         text = ""
+        text += f"VC総滞在時間ランキング（{yesterday.year:4d}年{yesterday.month:2d}月{yesterday.day:2d}日）\n"
+
+
         for index, (key, value) in enumerate(sorted_response_data.items()):
             duration_seconds = int(value["total_duration"])
             hours, remainder = divmod(duration_seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
 
-            text += f"{index+1}. ->  VC総滞在時間: {hours}時間{minutes}分{seconds}秒| "
+            text += f"{index+1}. -> {hours:2d}時間 {minutes:2d}分 {seconds:2d}秒 -> "
 
             diff_from_previous_day_seconds = int(value["difference_from_previous_day"])
             if diff_from_previous_day_seconds > 0:
                 diff_hours, diff_remainder = divmod(diff_from_previous_day_seconds, 3600)
                 diff_minutes, diff_seconds = divmod(diff_remainder, 60)
-                text += f"前日比: +{diff_hours}時間{diff_minutes}分{diff_seconds}秒| " 
+                text += f"前日比: +{diff_hours:2d}時間 {diff_minutes:2d}分 {diff_seconds:2d}秒 -> "
 
             text += f"{key}\n"
 
@@ -175,7 +178,6 @@ class CreateVoiceChatDailyStatAPIView(APIView):
             if int(value["difference_from_previous_day"]) > 0:
                 flag = True
                 break
-
 
         if flag:
             send_message_to_discord(text=text)
