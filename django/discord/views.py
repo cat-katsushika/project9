@@ -159,15 +159,15 @@ class CreateVoiceChatDailyStatAPIView(APIView):
             hours, remainder = divmod(duration_seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
 
-            text += f"{index+1}.  VC総滞在時間 -> {hours}時間{minutes}分{seconds}秒 : {key}"
+            text += f"{index+1}. ->  VC総滞在時間: {hours}時間{minutes}分{seconds}秒| "
 
             diff_from_previous_day_seconds = int(value["difference_from_previous_day"])
             if diff_from_previous_day_seconds > 0:
                 diff_hours, diff_remainder = divmod(diff_from_previous_day_seconds, 3600)
                 diff_minutes, diff_seconds = divmod(diff_remainder, 60)
-                text += f"前日比: +{diff_hours}時間{diff_minutes}分{diff_seconds}秒" 
+                text += f"前日比: +{diff_hours}時間{diff_minutes}分{diff_seconds}秒| " 
 
-            text += "\n"
+            text += f"{key}\n"
 
         # 更新があるときだけ通知
         flag = False
