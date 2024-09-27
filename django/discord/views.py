@@ -180,5 +180,5 @@ class CreateVoiceChatDailyStatAPIView(APIView):
                 break
 
         if flag:
-            send_message_to_discord(text=text)
+            send_message_to_discord(text=text, username="マーマルの犬")
         return Response(response_data, status=201)
