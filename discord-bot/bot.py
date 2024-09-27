@@ -44,15 +44,12 @@ async def on_voice_state_update(member, before, after):
     if before.channel is None and after.channel is not None:
         # ユーザーがボイスチャンネルに参加した
         state = "entry"
-        await channel.send(f"{member.name} が {after.channel.name} に参加しました。")
     elif before.channel is not None and after.channel is None:
         # ユーザーがボイスチャンネルから退出した
         state = "exit"
         await channel.send(f"{member.name} が {before.channel.name} から退出しました。")
     elif before.channel != after.channel:
         # ユーザーがボイスチャンネルを移動した
-        # あくまでdebug用
-        await channel.send(f"{member.name} が {before.channel.name} から {after.channel.name} に移動しました。")
         return
     else:
         # 状態に変化がない場合
@@ -65,7 +62,7 @@ async def on_voice_state_update(member, before, after):
     try:
         res = requests.post("http://django:8000/api/discord/voice-chat-entry-exit/", data=data)
         if state == "exit" and res.status_code == 200:
-            await channel.send(f"{member.name} の滞在情報を記録しました。")
+            await channel.send(f"{member.name}の滞在時間を記録しました -> 滞在時間: {res.json()['duration']}")
     except requests.exceptions.RequestException as e:
         await channel.send(f"APIへの接続中にエラーが発生しました: {e}")
 
