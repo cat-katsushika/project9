@@ -225,26 +225,62 @@ class ReactionCountAPIView(APIView):
 class CreateReactionDailyStatAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
+        # 現在のタイムゾーンでの日付を取得
+        today = timezone.now().date()
+        yesterday = today - timedelta(days=1)
 
-        # DiscordUserごとのリアクション数を集計し、discord_usernameでキーとする
-        reaction_stats = (
-            DiscordReactionStat.objects.values("discord_user__discord_username")
+        # 昨日以前のデータをフィルタリングして合計を集計
+        total_reaction_stats = (
+            DiscordReactionStat.objects.filter(date__lte=yesterday)
+            .values("discord_user__discord_username")
             .annotate(total_count=Sum("count"))
-            .order_by("-total_count")
         )
 
-        sorted_response_data = {
-            stat["discord_user__discord_username"]: stat["total_count"] or 0 for stat in reaction_stats
+        # 昨日のデータをフィルタリングして集計
+        yesterday_reaction_stats = (
+            DiscordReactionStat.objects.filter(date=yesterday)
+            .values("discord_user__discord_username")
+            .annotate(yesterday_count=Sum("count"))
+        )
+
+        # データを辞書に変換
+        total_counts = {stat["discord_user__discord_username"]: stat["total_count"] for stat in total_reaction_stats}
+
+        yesterday_counts = {
+            stat["discord_user__discord_username"]: stat["yesterday_count"] for stat in yesterday_reaction_stats
         }
 
+        # ユーザー名のセットを作成（全ユーザーをカバー）
+        usernames = set(total_counts.keys()) | set(yesterday_counts.keys())
+
+        # 結果を統合し、total_countの降順にソート
+        response_data = {}
+        for username in usernames:
+            response_data[username] = {
+                "total_count": total_counts.get(username, 0),
+                "yesterday_count": yesterday_counts.get(username, 0),
+            }
+
+        # total_countの降順にソートされた辞書を作成
+        sorted_response_data = dict(
+            sorted(response_data.items(), key=lambda item: item[1]["total_count"], reverse=True)
+        )
+
         text = ""
-
-        now = timezone.localtime()
-        text += f"リアクション数ランキング（{now.year:4d}年{now.month:2d}月{now.day:2d}日 "
-        text += f"{now.hour:2d}時{now.minute:2d}分{now.second:2d}秒 現在）\n"
-
+        text += f"リアクション数ランキング（{yesterday.year:4d}年{yesterday.month:2d}月{yesterday.day:2d}日）\n"
         for index, (key, value) in enumerate(sorted_response_data.items()):
-            text += f"{index+1}. -> {value:5d}回 -> {key}\n"
+            text += f"{index+1}. -> {value['total_count']}回"
+            if value["yesterday_count"] > 0:
+                text += f" -> 前日比: +{value['yesterday_count']}回"
+            text += f" -> {key}\n"
 
-        send_message_to_discord(text=text, username="マーマルの犬")
+        # 更新があるときだけ通知
+        flag = False
+        for key, value in sorted_response_data.items():
+            if int(value["yesterday_count"]) > 0:
+                flag = True
+                break
+
+        if flag:
+            send_message_to_discord(text=text, username="マーマルの犬")
         return Response(sorted_response_data, status=201)
