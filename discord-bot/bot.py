@@ -72,7 +72,7 @@ async def on_voice_state_update(member, before, after):
 
             text = f"{member.name}の滞在時間を記録しました。\n"
             text += f" -> 今回の滞在時間: {hours:2d}時間 {minutes:2d}分 {seconds:2d}秒\n"
-            text += f" -> 総滞在時間: {hours_total:2d}時間 {minutes_total:2d}分 {seconds_total:2d}秒"
+            text += f" -> 総滞在時間　　: {hours_total:2d}時間 {minutes_total:2d}分 {seconds_total:2d}秒"
 
             await channel.send(f"{text}")
 
