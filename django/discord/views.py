@@ -226,7 +226,7 @@ class CreateReactionDailyStatAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         # 現在のタイムゾーンでの日付を取得
-        today = timezone.now().date()
+        today = timezone.localtime().date()
         yesterday = today - timedelta(days=1)
 
         # 昨日以前のデータをフィルタリングして合計を集計
