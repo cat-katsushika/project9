@@ -36,6 +36,46 @@ async def on_message(message):
 
 
 @client.event
+async def on_raw_reaction_add(payload):
+    """
+    リアクションの追加イベント
+    """
+    # リアクションを押したユーザーがボットの場合は無視
+    if payload.member.bot:
+        return
+
+    data = {
+        "discord_user_id": payload.member.id,
+        "discord_username": payload.member.name,
+        "state": "add",
+    }
+    requests.post("http://django:8000/api/discord/reaction-count/", data=data)
+
+
+@client.event
+async def on_raw_reaction_remove(payload):
+    """
+    リアクションの削除イベント
+    """
+
+    user = client.get_user(payload.user_id)
+    # リアクションを削除したユーザーがボットの場合は無視
+
+    if user is None:
+        return
+
+    if user.bot:
+        return
+
+    data = {
+        "discord_user_id": user.id,
+        "discord_username": user.name,
+        "state": "remove",
+    }
+    requests.post("http://django:8000/api/discord/reaction-count/", data=data)
+
+
+@client.event
 async def on_voice_state_update(member, before, after):
     if channel is None:
         return

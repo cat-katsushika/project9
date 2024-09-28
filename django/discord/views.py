@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from django.db.models import Sum
 from django.utils import timezone
 
-from .models import DailyVoiceChatStat, DiscordUser, VoiceChatSession
+from .models import DailyVoiceChatStat, DiscordReactionStat, DiscordUser, VoiceChatSession
 from .utils import send_message_to_discord
 
 
@@ -190,3 +190,61 @@ class CreateVoiceChatDailyStatAPIView(APIView):
         if flag:
             send_message_to_discord(text=text, username="マーマルの犬")
         return Response(response_data, status=201)
+
+
+class ReactionCountAPIView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        discord_user_id = request.data.get("discord_user_id")
+        discord_username = request.data.get("discord_username")
+        state = request.data.get("state")
+
+        if discord_user_id is None or discord_username is None or state is None:
+            return Response({"message": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if state != "add" and state != "remove":
+            return Response({"message": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+        discord_user, _ = DiscordUser.objects.get_or_create(discord_user_id=discord_user_id)
+        discord_user.discord_username = discord_username
+        discord_user.save()
+
+        discord_reaction_stat, _ = DiscordReactionStat.objects.get_or_create(
+            discord_user=discord_user, date=timezone.now().date()
+        )
+
+        if state == "add":
+            discord_reaction_stat.count += 1
+        elif state == "remove":
+            discord_reaction_stat.count -= 1
+
+        discord_reaction_stat.save()
+        return Response({"message": "OK"}, status=200)
+
+
+class CreateReactionDailyStatAPIView(APIView):
+
+    def post(self, request, *args, **kwargs):
+
+        # DiscordUserごとのリアクション数を集計し、discord_usernameでキーとする
+        reaction_stats = (
+            DiscordReactionStat.objects.values("discord_user__discord_username")
+            .annotate(total_count=Sum("count"))
+            .order_by("-total_count")
+        )
+
+        sorted_response_data = {
+            stat["discord_user__discord_username"]: stat["total_count"] or 0 for stat in reaction_stats
+        }
+
+        text = ""
+
+        now = timezone.localtime()
+        text += f"リアクション数ランキング（{now.year:4d}年{now.month:2d}月{now.day:2d}日 "
+        text += f"{now.hour:2d}時{now.minute:2d}分{now.second:2d}秒 現在）\n"
+
+        for index, (key, value) in enumerate(sorted_response_data.items()):
+            text += f"{index+1}. -> {value:5d}回 -> {key}\n"
+
+        send_message_to_discord(text=text, username="マーマルの犬")
+        return Response(sorted_response_data, status=201)
