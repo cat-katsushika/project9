@@ -35,3 +35,16 @@ class DailyVoiceChatStat(models.Model):
 
     def __str__(self):
         return f"{self.discord_user.discord_username} - {self.date}"
+
+
+class DiscordReactionStat(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    discord_user = models.ForeignKey(DiscordUser, on_delete=models.CASCADE)
+    date = models.DateField()
+    count = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ("discord_user", "date")
+
+    def __str__(self):
+        return f"{self.discord_user.discord_username} - {self.date}"
