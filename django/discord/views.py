@@ -269,9 +269,12 @@ class CreateReactionDailyStatAPIView(APIView):
         text = ""
         text += f"リアクション数ランキング（{yesterday.year:4d}年{yesterday.month:2d}月{yesterday.day:2d}日）\n"
         for index, (key, value) in enumerate(sorted_response_data.items()):
-            text += f"{index+1}. -> {value['total_count']}回"
-            if value["yesterday_count"] > 0:
-                text += f" -> 前日比: +{value['yesterday_count']}回"
+            total_counts = int(value["total_count"])
+            yesterday_counts = int(value["yesterday_count"])
+
+            text += f"{index+1}. -> {total_counts:5d}回"
+            if yesterday_counts > 0:
+                text += f" -> 前日比: + {yesterday_counts:5d}回"
             text += f" -> {key}\n"
 
         # 更新があるときだけ通知
