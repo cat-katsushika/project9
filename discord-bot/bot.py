@@ -65,9 +65,16 @@ async def on_voice_state_update(member, before, after):
             hours, remainder = divmod(duration_second, 3600)
             minutes, seconds = divmod(remainder, 60)
 
-            await channel.send(
-                f"{member.name}の滞在時間を記録しました。 -> 今回の滞在時間: {hours:2d}時間 {minutes:2d}分 {seconds:2d}秒"
-            )
+            total_seconds = int(res.json()["total_seconds"])
+            hours_total, remainder_total = divmod(total_seconds, 3600)
+            minutes_total, seconds_total = divmod(remainder_total, 60)
+
+            text = f"{member.name}の滞在時間を記録しました。\n"
+            text += f" -> 今回の滞在時間: {hours:2d}時間 {minutes:2d}分 {seconds:2d}秒\n"
+            text += f" -> 総滞在時間: {hours_total:2d}時間 {minutes_total:2d}分 {seconds_total:2d}秒"
+
+            await channel.send(f"{text}")
+
     except requests.exceptions.RequestException as e:
         await channel.send(f"APIへの接続中にエラーが発生しました: {e}")
 

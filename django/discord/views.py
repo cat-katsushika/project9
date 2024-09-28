@@ -70,7 +70,16 @@ class VoiceChatRoomEntryExitAPIView(APIView):
                 session.save()
 
                 second = int(session.duration.total_seconds())
-                return Response({"message": "滞在時間が記録されました。", "duration": second}, status=200)
+
+                total_duration = VoiceChatSession.objects.filter(
+                    discord_user=discord_user, exit_time__isnull=False
+                ).aggregate(total_duration=Sum("duration"))["total_duration"]
+                total_seconds = 0 if total_duration is None else int(total_duration.total_seconds())
+
+                return Response(
+                    {"message": "滞在時間が記録されました。", "duration": second, "total_seconds": total_seconds},
+                    status=200,
+                )
 
             except VoiceChatSession.DoesNotExist:
                 # 入室記録がない場合のエラーメッセージ
@@ -155,7 +164,6 @@ class CreateVoiceChatDailyStatAPIView(APIView):
 
         text = ""
         text += f"VC総滞在時間ランキング（{yesterday.year:4d}年{yesterday.month:2d}月{yesterday.day:2d}日）\n"
-
 
         for index, (key, value) in enumerate(sorted_response_data.items()):
             duration_seconds = int(value["total_duration"])
