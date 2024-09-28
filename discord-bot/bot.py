@@ -44,6 +44,7 @@ async def on_voice_state_update(member, before, after):
     if before.channel is None and after.channel is not None:
         # ユーザーがボイスチャンネルに参加した
         state = "entry"
+        await channel.send(f"{member.name} が {after.channel.name} に入室しました。")
     elif before.channel is not None and after.channel is None:
         # ユーザーがボイスチャンネルから退出した
         state = "exit"
