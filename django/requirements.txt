@@ -4,6 +4,7 @@ djangorestframework==3.15.2
 psycopg2==2.9.9
 gunicorn==23.0.0
 requests==2.32.3
+table2ascii==1.1.3           # Discordに送るランキングをきれいに作成するのに使用
 
 # dev
 black==24.8.0

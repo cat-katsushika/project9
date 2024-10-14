@@ -8,7 +8,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from .models import DailyVoiceChatStat, DiscordReactionStat, DiscordUser, VoiceChatSession
-from .utils import send_message_to_discord
+from .utils import create_reaction_ranking_text, create_stay_time_ranking_text, send_message_to_discord
 
 
 class VoiceChatRoomEntryExitAPIView(APIView):
@@ -162,23 +162,7 @@ class CreateVoiceChatDailyStatAPIView(APIView):
             sorted(response_data.items(), key=lambda item: item[1]["total_duration"], reverse=True)
         )
 
-        text = ""
-        text += f"VC総滞在時間ランキング（{yesterday.year:4d}年{yesterday.month:2d}月{yesterday.day:2d}日）\n"
-
-        for index, (key, value) in enumerate(sorted_response_data.items()):
-            duration_seconds = int(value["total_duration"])
-            hours, remainder = divmod(duration_seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
-
-            text += f"{index+1}. -> {hours:2d}時間 {minutes:2d}分 {seconds:2d}秒 -> "
-
-            diff_from_previous_day_seconds = int(value["difference_from_previous_day"])
-            if diff_from_previous_day_seconds > 0:
-                diff_hours, diff_remainder = divmod(diff_from_previous_day_seconds, 3600)
-                diff_minutes, diff_seconds = divmod(diff_remainder, 60)
-                text += f"前日比: +{diff_hours:2d}時間 {diff_minutes:2d}分 {diff_seconds:2d}秒 -> "
-
-            text += f"{key}\n"
+        text = create_stay_time_ranking_text(yesterday, sorted_response_data)
 
         # 更新があるときだけ通知
         flag = False
@@ -266,16 +250,7 @@ class CreateReactionDailyStatAPIView(APIView):
             sorted(response_data.items(), key=lambda item: item[1]["total_count"], reverse=True)
         )
 
-        text = ""
-        text += f"リアクション数ランキング（{yesterday.year:4d}年{yesterday.month:2d}月{yesterday.day:2d}日）\n"
-        for index, (key, value) in enumerate(sorted_response_data.items()):
-            total_counts = int(value["total_count"])
-            yesterday_counts = int(value["yesterday_count"])
-
-            text += f"{index+1}. -> {total_counts:5d}回"
-            if yesterday_counts > 0:
-                text += f" -> 前日比: + {yesterday_counts:5d}回"
-            text += f" -> {key}\n"
+        text = create_reaction_ranking_text(yesterday, sorted_response_data)
 
         # 更新があるときだけ通知
         flag = False
